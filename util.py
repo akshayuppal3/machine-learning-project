@@ -35,25 +35,30 @@ def warn(*args, **kwargs):
 #testing function
 #to do create a function that would do the prediction
 def prediction_models(models,X,Y):
-    for name,model in models:
+    for name,model in models.items():
         Y_pred = model.predict(X)
         score = accuracy_score(Y,Y_pred)
         print("accuarcy ",name,":", score)
+        classification(Y,Y_pred)
 
 def prediction(model,X,y):
     Y_pred = model.predict(X)
     score = accuracy_score(y,Y_pred)
     return(score)
 
+def classification(Y_dev,Y_pred):
+    confusion_matrix(Y_dev,Y_pred)
+    print('  Classification Report:\n',classification_report(Y_dev,Y_pred),'\n')
+
 #@return accuarcy of the model
-def dt_best_features(X_train,Y_train,X_dev, Y_dev):
+def dt_best_features(X_train,Y_train,X_dev,Y_dev):
     clf = ExtraTreesClassifier()
     clf = clf.fit(X_train, Y_train)
     model = SelectFromModel(clf, prefit=True)
     X_new = model.transform(X_train)
     X_dev = model.transform(X_dev)
     # baseline_models(X_new,Y_train,X_dev_new,Y_dev)
-    Y_pred,score,_ = decision_tree(X_train,Y_train,X_dev,Y_dev)
+    tree = decision_tree(X_train,Y_train,X_dev,Y_dev)
     return(score)
 
 #baseline models
@@ -72,47 +77,7 @@ def decision_tree(X_train,Y_train):
     # score = accuracy_score(Y_dev,Y_pred)
     #print("Accuracy : decision_tree: ", score)
     #score = classification(Y_dev,Y_pred)
-    return(dt)
-
-def baseline_models(X_train,Y_train):
-    models = {}
-    print("Training the baseline models")    
-    perc = perceptron(X_train,Y_train)
-    #print("Development Accuracy : perceptron: ", perc_score)
-    knn = knn(X_train,Y_train)
-    dt = decision_tree(X_train,Y_train)
-    models = {"perceptron":perc,"knn":knn,"decision_tree":dt}
-    return(models)
-
-def classification(Y_dev,Y_pred):
-    confusion_matrix(Y_dev,Y_pred)
-    print('  Classification Report:\n',classification_report(Y_dev,Y_pred),'\n')
-
-#better models
-def svm_wrapper(X_train,Y_train):
-    param_grid = [
-    {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
-    {'C': [1, 10, 100, 1000], 'gamma': [1,0.1,0.01,0.001, 0.0001], 'kernel': ['rbf']},]
-    clf = GridSearchCV(SVC(),param_grid)
-    clf.fit(X_train, Y_train)
-    return(clf)
-
-def voting_classifier(X_train,Y_train,X_dev,Y_dev):
-    dt = decision_tree(X_train,Y_train,X_dev,Y_dev)
-    perc = perceptron(X_train,Y_train,X_dev,Y_dev)
-    svm = svm_wrapper(X_train,Y_train,X_dev,Y_dev)
-    eclf = VotingClassifier(estimators=[('dt', dt),('svc', svm),('perc',perc)], voting='hard', weights=[1,3,3]) #('svc', svm),('knn', knn)
-    eclf.fit(X_train, Y_train)
-    Y_pred = eclf.predict(X_dev)
-    score1 = accuracy_score(Y_dev,Y_pred)
-    return(score1)
-
-#Changed the logic with grid search
-def mlp_wrapper(X_train,Y_train):
-    param_grid = [{'hidden_layer_sizes':np.arange(10,150,10),'max_iter':[30] ,'activation':['logistic', 'tanh','relu']}]
-    mlp = GridSearchCV(MLPClassifier(), param_grid)
-    mlp.fit(X_train, Y_train)
-    return(mlp)
+    return(tree)
 
 #from sklearn.preprocessing import CategoricalEncoder
 def knn(X_train,Y_train):
@@ -121,21 +86,64 @@ def knn(X_train,Y_train):
     knn.fit(X_train,Y_train)
     return(knn)
 
+#better models
+def svm_wrapper(X_train,Y_train):
+    param_grid = [
+    {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
+    {'C': [1, 10, 100, 1000], 'gamma': [1,0.1,0.01,0.001, 0.0001], 'kernel': ['rbf']},]
+    svm1 = GridSearchCV(SVC(),param_grid)
+    print("hyperparameter tuning for svm complete")
+    print(X_train.shape,Y_train.shape)
+    svm1.fit(X_train, Y_train)
+    print("model fitted with SVM")
+    return(svm1)
+
+def voting_classifier(X_train,Y_train):
+    dt = decision_tree(X_train,Y_train)
+    perc = perceptron(X_train,Y_train)
+    svm = svm_wrapper(X_train,Y_train)
+    eclf = VotingClassifier(estimators=[('dt', dt),('svc', svm),('perc',perc)], voting='hard', weights=[1,3,3]) #('svc', svm),('knn', knn)
+    eclf.fit(X_train, Y_train)
+    return(eclf)
+
+#Changed the logic with grid search
+def mlp_wrapper(X_train,Y_train):
+    param_grid = [{'hidden_layer_sizes':np.arange(10,150,10),'max_iter':[30] ,'activation':['logistic', 'tanh','relu']}]
+    mlp = GridSearchCV(MLPClassifier(), param_grid)
+    mlp.fit(X_train, Y_train)
+    return(mlp)
+#b--
 def naive_bayes(X_train,Y_train):
     clf = BernoulliNB()
     clf.fit(X_train, Y_train)
     return(clf)
 
-#to do change
-def extended_model(X_train,Y_train,X_dev,Y_dev):
-    score,Ypred =knn(X_train,Y_train, X_dev,Y_dev)
-    print("Accuracy : knn ", score)
-    score, Y_pred = mlp_wrapper(X_train, Y_train, X_dev, Y_dev, 1500, 'relu')
-    print("Accuracy : MLP ", score)
-    score, Y_pred = svm_wrapper(X_train,Y_train,X_dev,Y_dev)
-    print("Accuracy: SVM ", score)
-    score, Y_pred = bagging(X_train,Y_train, X_dev, Y_dev)
-    print("Accuracy: bagging:  ", score)
+def baseline_models(X_train,Y_train):
+    models = {}
+    print("Training the baseline models")    
+    perc = perceptron(X_train,Y_train)
+    knearest = knn(X_train,Y_train)
+    dt = decision_tree(X_train,Y_train)
+    naive_bayes1 = naive_bayes(X_train,Y_train) 
+    models = {"perceptron":perc,"knn":knearest,"decision_tree":dt,"naive_bayes":naive_bayes1}
+    return(models)
+
+#@return the models @params training data
+def extended_model(X_train,Y_train):
+    models= {}
+    print("Training the extended models") 
+    svm1 = svm_wrapper(X_train,Y_train)
+    #mlp = mlp_wrapper(X_train, Y_train)
+    #voting_cl = voting_classifier(X_train, Y_train)
+    #svm2 = PCA_with_SVM(X_train,Y_train)
+    #boosting1 = boosting(X_train,Y_train)
+    models = {"svm":svm} #"boosting":boosting1, "svm":svm, "mlp":mlp,"PCA_with_SVM":svm2#"voting_classifier":voting_cl,
+    return(models)
+
+def ensemble_models(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
+    bagging_with_DT(X_train,Y_train, X_dev, Y_dev)
+    PCA_with_DT(X_train,Y_train,X_dev, Y_dev)
+
 #v1
 # def bagging_with_tree(X_train,Y_train,X_dev,Y_dev,depth):
 #     dt =decision_tree(X_train,Y_train)
@@ -145,7 +153,12 @@ def extended_model(X_train,Y_train,X_dev,Y_dev):
 #     score = accuracy_score(Y_dev,Y_pred)
 #     return(score)   
 
-#v2: Current version @@prints
+def boosting(X_train,Y_train):
+    gb= GradientBoostingClassifier()
+    gb.fit(X_train, Y_train)
+    return(gb)
+
+#v2: Current version
 def bagging_with_DT(X_train,Y_train, X_dev, Y_dev):
     for i in range(1,5):
         dt = DecisionTreeClassifier(max_depth = i,random_state = 4)
@@ -158,13 +171,8 @@ def bagging_with_DT(X_train,Y_train, X_dev, Y_dev):
     print("bagging with decision tree:", sc)
     # return(score,Y_pred)        
 
-def boosting(X_train,Y_train):
-    gb= GradientBoostingClassifier()
-    gb.fit(X_train, Y_train)
-    return(gb)
-
-##@@print
-def PCA_with_DT(X_train,Y_train):
+#
+def PCA_with_DT(X_train,Y_train,X_dev, Y_dev):
     score = [0]
     for i in range(1,20):
         estimators1 = [('tree', PCA()), ('clf', DecisionTreeClassifier(max_depth =i,random_state = 4) )]

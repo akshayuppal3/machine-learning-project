@@ -22,8 +22,8 @@ class Load:
 		return(X_all, Y_all)
 
 	def split_data(self,X,Y):
-		X_train,X_test, Y_train, Y_test =  train_test_split(X, Y,test_size =0.2,random_state= 4 )
-		X_train,X_val , Y_train, Y_val  = train_test_split(X_train, Y_train,test_size =0.25,random_state= 4 )
+		X_train,X_test, Y_train, Y_test =  train_test_split(X, Y,test_size =0.10,random_state= 4 )
+		X_train,X_val , Y_train, Y_val  = train_test_split(X_train, Y_train,test_size =0.11,random_state= 4 )
 		return (X_train, Y_train , X_val, Y_val, X_test, Y_test)
 
 	def __init__(self):
@@ -38,6 +38,3 @@ class Load:
 
 	def get_data(self):
 		return(self.X_train,self.Y_train,self.X_val,self.Y_val,self.X_test,self.Y_test)
-		#return(X_train,Y_train,X_val,Y_val,X_test,Y_test)
-
-#use class to hold data

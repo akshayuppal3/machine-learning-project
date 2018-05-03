@@ -1,4 +1,4 @@
-from data import *
+from preprocessing import *
 import data
 from util import *
 import argparse
@@ -9,19 +9,11 @@ def models():
 	baseline_models(X_train,Y_train,X_val,Y_val)
 	extended_model(X_train,Y_train,X_test,Y_test)
 
-def preprocess():
-	#loading the data
-	x = data.Load()
-	#preprocessing
-	X_train,Y_train,X_val,Y_val,X_test,Y_test = x.get_data()
-	X_train,Y_train, X_test, Y_test, X_val, Y_val = preprocessing(X_train,Y_train, X_test, Y_test, X_val, Y_val)
-
 def all():
-	x = data.Load()
+	x = preprocessing.Preprocess()
 	#preprocessing
 	X_train,Y_train,X_val,Y_val,X_test,Y_test = x.get_data()
-	X_train,Y_train, X_test, Y_test, X_val, Y_val = preprocessing(X_train,Y_train, X_test, Y_test, X_val, Y_val)
-	X_train,Y_train, X_test, Y_test, X_val, Y_val = OneHot(X_train,Y_train, X_test, Y_test, X_val, Y_val)
+	#running all the baseline and extended models
 	baseline_models(X_train,Y_train,X_val,Y_val)
 	extended_model(X_train,Y_train,X_test,Y_test)
 	bagging_with_tree(X_train,Y_train,X_test,Y_test,depth)

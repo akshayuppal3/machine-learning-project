@@ -1,7 +1,4 @@
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import Imputer
-import numpy as np
 from sklearn import tree
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -34,42 +31,6 @@ import warnings
 #Suppress warning
 def warn(*args, **kwargs):
     pass
-
-# Function to take care of missing values
-def missing_values(X, y):
-    imp = Imputer(strategy= 'most_frequent', axis = 0) 
-    imp.fit(X)
-    X = imp.transform(X)
-    imp.fit(y.reshape(-1,1))
-    y = imp.transform(y.reshape(-1,1))   
-    return(X,y)
-
-#removes null values and performs one hot encoding
-def preprocessing(X_train,Y_train, X_test, Y_test, X_val, Y_val):
-    print("preprocessing data")
-    imp = Imputer(strategy= 'most_frequent', axis = 0) 
-    imp.fit(X_train)
-    X_train = imp.transform(X_train)
-    X_val = imp.transform(X_val)
-    X_test = imp.transform(X_test)
-    imp.fit(Y_train.reshape(-1,1))
-    Y_train = imp.transform(Y_train.reshape(-1,1))
-    Y_test = imp.transform(Y_test.reshape(-1,1))
-    Y_val = imp.transform(Y_val.reshape(-1,1)) 
-    #Changing categoriral features to nominal
-    return(X_train,Y_train, X_test, Y_test, X_val, Y_val)
- 
-def OneHot(X_train,Y_train, X_test, Y_test, X_val, Y_val):
-    enc = OneHotEncoder()   #sparse = 'False',n_values= (np.max(X,axis= 0) + 1))
-    enc.fit(X_train)
-    X_train = enc.transform(X_train).toarray()
-    X_test = enc.transform(X_test).toarray()
-    X_val = enc.transform(X_val).toarray()
-    #Coverting the Y to array
-    Y_train = Y_train.ravel()
-    Y_test = Y_test.ravel()
-    Y_val = Y_val.ravel()
-    return(X_train,Y_train, X_test, Y_test, X_val, Y_val)
 
 #@return accuarcy of the model
 def dt_best_features(X_train,Y_train,X_test, Y_test):
@@ -131,7 +92,7 @@ def voting_classifier(X_train,Y_train,X_test,Y_test):
     Y_pred = eclf.predict(X_test)
     score1 = accuracy_score(Y_test,Y_pred)
     return(score1)
-    
+
 #Changed the logic with grid search
 def mlp_wrapper(X_train,Y_train, X_test,Y_test):
     param_grid = [{'hidden_layer_sizes':np.arange(10,150,10),'max_iter':[30] ,'activation':['logistic', 'tanh','relu']}]

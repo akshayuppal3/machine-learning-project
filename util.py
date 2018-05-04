@@ -6,6 +6,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.feature_selection import SelectFromModel
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
 #models
 from sklearn.linear_model import Perceptron
 from sklearn.tree import DecisionTreeClassifier
@@ -17,6 +19,8 @@ from sklearn.naive_bayes import BernoulliNB
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
 #grid search
 from sklearn.model_selection import GridSearchCV
 #pipiline
@@ -50,52 +54,33 @@ def classification(Y_dev,Y_pred):
     confusion_matrix(Y_dev,Y_pred)
     print('  Classification Report:\n',classification_report(Y_dev,Y_pred),'\n')
 
-#@return accuarcy of the model
-def dt_best_features(X_train,Y_train,X_dev,Y_dev):
-    clf = ExtraTreesClassifier()
-    clf = clf.fit(X_train, Y_train)
-    model = SelectFromModel(clf, prefit=True)
-    X_new = model.transform(X_train)
-    X_dev = model.transform(X_dev)
-    # baseline_models(X_new,Y_train,X_dev_new,Y_dev)
-    tree = decision_tree(X_train,Y_train,X_dev,Y_dev)
-    return(score)
 
 #baseline models
 def perceptron(X_train,Y_train):
     clf = Perceptron(tol= None,random_state = 4)
     clf.fit(X_train,Y_train)
-    # Y_pred = clf.predict(X_dev)
-    # score = accuracy_score(Y_dev,Y_pred)
     return(clf)
 
 def decision_tree(X_train,Y_train):
     param_grid = [{'max_depth':np.arange(2,50)}]
     tree = GridSearchCV(DecisionTreeClassifier(),param_grid) 
     tree.fit(X_train,Y_train)
-    # Y_pred = tree.predict(X_dev)
-    # score = accuracy_score(Y_dev,Y_pred)
-    #print("Accuracy : decision_tree: ", score)
-    #score = classification(Y_dev,Y_pred)
     return(tree)
 
 #from sklearn.preprocessing import CategoricalEncoder
 def knn(X_train,Y_train):
     param_grid = [{'n_neighbors': np.arange(2,250,20)}]
     knn = GridSearchCV(KNeighborsClassifier(),param_grid) 
-    knn.fit(X_train,Y_train)
+    knn.fit(X_train,Y_train)    
     return(knn)
 
 #better models
 def svm_wrapper(X_train,Y_train):
     param_grid = [
-    {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
-    {'C': [1, 10, 100, 1000], 'gamma': [1,0.1,0.01,0.001, 0.0001], 'kernel': ['rbf']},]
+    {'C': [1, 10], 'kernel': ['linear']},
+    {'C': [1, 10], 'gamma': [0.1,0.01], 'kernel': ['rbf']},]
     svm1 = GridSearchCV(SVC(),param_grid)
-    print("hyperparameter tuning for svm complete")
-    print(X_train.shape,Y_train.shape)
     svm1.fit(X_train, Y_train)
-    print("model fitted with SVM")
     return(svm1)
 
 def voting_classifier(X_train,Y_train):
@@ -108,7 +93,7 @@ def voting_classifier(X_train,Y_train):
 
 #Changed the logic with grid search
 def mlp_wrapper(X_train,Y_train):
-    param_grid = [{'hidden_layer_sizes':np.arange(10,150,10),'max_iter':[30] ,'activation':['logistic', 'tanh','relu']}]
+    param_grid = [{'hidden_layer_sizes':np.arange(10,250,25),'max_iter':[30] ,'activation':['logistic', 'tanh','relu']}]
     mlp = GridSearchCV(MLPClassifier(), param_grid)
     mlp.fit(X_train, Y_train)
     return(mlp)
@@ -120,56 +105,30 @@ def naive_bayes(X_train,Y_train):
 
 def baseline_models(X_train,Y_train):
     models = {}
-    print("Training the baseline models")    
     perc = perceptron(X_train,Y_train)
     knearest = knn(X_train,Y_train)
     dt = decision_tree(X_train,Y_train)
-    naive_bayes1 = naive_bayes(X_train,Y_train) 
-    models = {"perceptron":perc,"knn":knearest,"decision_tree":dt,"naive_bayes":naive_bayes1}
+    models = {"perceptron":perc,"knn":knearest,"decision_tree":dt}
     return(models)
 
 #@return the models @params training data
-def extended_model(X_train,Y_train):
+def extended_model(X_train,Y_train,X_dev, Y_dev):
     models= {}
-    print("Training the extended models") 
-    svm1 = svm_wrapper(X_train,Y_train)
-    #mlp = mlp_wrapper(X_train, Y_train)
-    #voting_cl = voting_classifier(X_train, Y_train)
-    #svm2 = PCA_with_SVM(X_train,Y_train)
-    #boosting1 = boosting(X_train,Y_train)
-    models = {"svm":svm} #"boosting":boosting1, "svm":svm, "mlp":mlp,"PCA_with_SVM":svm2#"voting_classifier":voting_cl,
+    nb= naive_bayes(X_train,Y_train)
+    mlp = mlp_wrapper(X_train, Y_train)
+    svm2 = PCA_with_SVM(X_train,Y_train)
+    dt = PCA_with_DT(X_train,Y_train,X_dev, Y_dev)
+    rd = random_forest(X_train,Y_train,X_dev,Y_dev)
+    models = {"naive_bayes":nb,"MLP":mlp,"PCA_with_SVM":svm2,"random_forest":rd}
     return(models)
 
 def ensemble_models(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
     bagging_with_DT(X_train,Y_train, X_dev, Y_dev)
-    PCA_with_DT(X_train,Y_train,X_dev, Y_dev)
-
-#v1
-# def bagging_with_tree(X_train,Y_train,X_dev,Y_dev,depth):
-#     dt =decision_tree(X_train,Y_train)
-#     BaggingClassifier(n_estimators = n_estimator,random_state= 4,base_estimator = dt)
-#     bag.fit(X_train, Y_train)
-#     Y_pred = bag.predict(X_dev)
-#     score = accuracy_score(Y_dev,Y_pred)
-#     return(score)   
 
 def boosting(X_train,Y_train):
     gb= GradientBoostingClassifier()
     gb.fit(X_train, Y_train)
     return(gb)
-
-#v2: Current version
-def bagging_with_DT(X_train,Y_train, X_dev, Y_dev):
-    for i in range(1,5):
-        dt = DecisionTreeClassifier(max_depth = i,random_state = 4)
-        param_grid = [{'n_estimators': np.arange(1,30),'base_estimator':[dt]}]
-        bag = GridSearchCV(BaggingClassifier(), param_grid)
-        bag.fit(X_train, Y_train)
-        Y_pred = bag.predict(X_dev)
-    score.append(accuracy_score(Y_dev,Y_pred))
-    sc = np.sort(score)[::-1][0]
-    print("bagging with decision tree:", sc)
-    # return(score,Y_pred)        
 
 #
 def PCA_with_DT(X_train,Y_train,X_dev, Y_dev):
@@ -189,3 +148,100 @@ def PCA_with_SVM(X_train,Y_train):
     pipe = Pipeline(estimators)
     pipe.fit(X_train,Y_train)
     return(pipe)
+
+def random_forest(X_train,Y_train,X_dev,Y_dev):
+    score1 = []
+    model = []
+    for i in np.arange(1,10):
+        for j in np.arange(1,30):
+            rand = RandomForestClassifier(max_depth = i, n_estimators = j,random_state = 4,n_jobs = -1)
+            rand.fit(X_train,Y_train)
+            Y_pred = rand.predict(X_dev)
+            score = accuracy_score(Y_pred,Y_dev)
+            score1.append(score)
+            model.append(rand)
+    sc = np.sort(score1)[::-1][0]
+    idx= np.argsort(score1)[::-1][0]
+    rand_model = model[idx]
+    return(rand_model)
+
+def feature_engineering(X_train,Y_train,X_dev,Y_dev,i):
+    KBest = SelectKBest(chi2,k=i)
+    KBest.fit(X_train,Y_train)
+    X_train = KBest.transform(X_train)
+    X_dev = KBest.transform(X_dev)
+    return(X_train,Y_train,X_dev,Y_dev,KBest)
+
+def regularization(X_train,Y_train,X_dev,Y_dev,c):
+    lv = LinearSVC(penalty="l2",C=0.1,dual=False)
+    lv.fit(X_train,Y_train)
+    model = SelectFromModel(lv, prefit=True)
+    X_tr_new = model.transform(X_train)
+    X_dv_new = model.transform(X_dev)
+    rand_model =random_forest(X_tr_new,Y_train,X_dv_new,Y_dev)
+    score = prediction(rand_model,X_dv_new,Y_dev)
+    return(score,rand_model,model)
+
+#return acccuracy of testing
+def feature_tuning_rf(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
+    params_C = [0.01,0.1,1]
+    scores = []
+    rf_model = []
+    tf_model = []
+    for c in params_C:
+        score,rand,model = regularization(X_train,Y_train,X_dev,Y_dev,c)
+        scores.append(score)
+        rf_model.append(rand)
+        tf_model.append(model)
+    idx = np.argsort(score)[::-1][0]
+    rand_model_new = rf_model[idx]
+    tf_model_new = tf_model[idx]
+    X_test_new = tf_model_new.transform(X_test)
+    score = prediction(rand_model_new,X_test_new,Y_test)
+    print("testing acccuracy with L2 regularization: ", score)
+    Y_pred = rand_model_new.predict(X_test_new)
+    classification(Y_test,Y_pred)
+    
+#@return testing data and model of the model
+def dt_best_features(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
+    clf = ExtraTreesClassifier()
+    clf = clf.fit(X_train, Y_train)
+    model = SelectFromModel(clf, prefit=True)
+    X_tr_new = model.transform(X_train)
+    X_dv_new = model.transform(X_dev)
+    tree = decision_tree(X_tr_new,Y_train)
+    return(X_test,Y_test,tree)
+
+#v2: Current version
+def bagging_with_DT(X_train,Y_train, X_dev, Y_dev):
+    score =[]
+    model = []
+    for i in range(1,5):
+        dt = DecisionTreeClassifier(max_depth = i,random_state = 4)
+        param_grid = [{'n_estimators': np.arange(1,30),'base_estimator':[dt]}]
+        bag = GridSearchCV(BaggingClassifier(), param_grid)
+        bag.fit(X_train, Y_train)
+        Y_pred = bag.predict(X_dev)
+    score.append(accuracy_score(Y_dev,Y_pred))
+    sc = np.sort(score)[::-1][0]
+    print("bagging with decision tree:", sc)
+    # return(score,Y_pred)   
+
+##********Not used***********
+def feature_tuning_forest(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
+    dev_acc = []
+    model = []
+    best_features = []
+    for k in np.arange(1,5):
+        Xtrain,Ytrain,Xdev,Ydev,Kbest = feature_engineering(X_train,Y_train,X_dev,Y_dev,k)
+        rand_model =random_forest(Xtrain,Ytrain,Xdev,Ydev)
+        Y_pred = rand_model.predict(Xdev)
+        score = accuracy_score(Y_pred,Ydev)
+        dev_acc.append(score)
+        model.append(rand_model)
+        best_features.append(Kbest)
+    idx = np.argsort(dev_acc)[::-1][0]
+    rand_new = model[idx]
+    Kbest_model = best_features[idx] 
+    Xtest = Kbest_model.transform(X_test)
+    return(X_test,Y_test,rand_new)

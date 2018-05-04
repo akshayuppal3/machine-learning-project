@@ -1,5 +1,6 @@
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import Imputer
+from sklearn.preprocessing import Normalizer
 import numpy as np
 from data import *
 import data
@@ -40,7 +41,16 @@ class Preprocess:
         Y_train = imp.transform(Y_train.reshape(-1,1))
         Y_test = imp.transform(Y_test.reshape(-1,1))
         Y_val = imp.transform(Y_val.reshape(-1,1)) 
-        #Changing categoriral features to nominal
+        #Coverting the Y to array
+        Y_train = Y_train.ravel()
+        Y_test = Y_test.ravel()
+        Y_val = Y_val.ravel()
+        #Normalizing the features
+        norm = Normalizer()
+        norm.fit(X_train,Y_train)
+        X_train = norm.transform(X_train)
+        X_val = norm.transform(X_val)
+        X_test = norm.transform(X_test)
         return(X_train,Y_train, X_test, Y_test, X_val, Y_val)
     
     def get_data(self):

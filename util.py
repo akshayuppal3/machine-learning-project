@@ -226,22 +226,3 @@ def bagging_with_DT(X_train,Y_train, X_dev, Y_dev):
     sc = np.sort(score)[::-1][0]
     print("bagging with decision tree:", sc)
     # return(score,Y_pred)   
-
-##********Not used***********
-def feature_tuning_forest(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
-    dev_acc = []
-    model = []
-    best_features = []
-    for k in np.arange(1,5):
-        Xtrain,Ytrain,Xdev,Ydev,Kbest = feature_engineering(X_train,Y_train,X_dev,Y_dev,k)
-        rand_model =random_forest(Xtrain,Ytrain,Xdev,Ydev)
-        Y_pred = rand_model.predict(Xdev)
-        score = accuracy_score(Y_pred,Ydev)
-        dev_acc.append(score)
-        model.append(rand_model)
-        best_features.append(Kbest)
-    idx = np.argsort(dev_acc)[::-1][0]
-    rand_new = model[idx]
-    Kbest_model = best_features[idx] 
-    Xtest = Kbest_model.transform(X_test)
-    return(X_test,Y_test,rand_new)

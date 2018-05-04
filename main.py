@@ -14,14 +14,11 @@ def train_baseline(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
 	models = baseline_models(X_train,Y_train)
 	print("Development accuracy")
 	prediction_models(models,X_dev,Y_dev)
-	print("\n" * 3)
-	print("Testing accuracy")
-	prediction_models(models,X_test,Y_test)
 
 #This takes some time
 def train_extended(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
 	print("Trainig other models (naive_bayes,MLP,PCA_with_SVM and random_forest)")
-	print("\n" *1)
+	print("\n" *1)	
 	print("This might take some time :[estimated(2min 10s)]")
 	models = extended_model(X_train,Y_train,X_dev, Y_dev)
 	print("\n" * 2)

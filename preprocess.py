@@ -6,29 +6,6 @@ from data import *
 import data
 
 class Preprocess:
-# Function to take care of missing values
-    # Function not used: Changed to preprocessing
-    def missing_values(X, y):
-        imp = Imputer(strategy= 'most_frequent', axis = 0) 
-        imp.fit(X)
-        X = imp.transform(X)
-        imp.fit(y.reshape(-1,1))
-        y = imp.transform(y.reshape(-1,1))   
-        return(X,y)
-
-    #Fucntion not active
-    def OneHot(X_train,Y_train, X_test, Y_test, X_val, Y_val):
-        enc = OneHotEncoder()   #sparse = 'False',n_values= (np.max(X,axis= 0) + 1))
-        enc.fit(X_train)
-        X_train = enc.transform(X_train).toarray()
-        X_test = enc.transform(X_test).toarray()
-        X_val = enc.transform(X_val).toarray()
-        #Coverting the Y to array
-        Y_train = Y_train.ravel()
-        Y_test = Y_test.ravel()
-        Y_val = Y_val.ravel()
-        return(X_train,Y_train, X_test, Y_test, X_val, Y_val)
-
     #removes null values and performs one hot encoding
     def preprocessing(self,X_train,Y_train, X_test, Y_test, X_val, Y_val):
         print("preprocessing data")

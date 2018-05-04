@@ -173,7 +173,7 @@ def feature_engineering(X_train,Y_train,X_dev,Y_dev,i):
     return(X_train,Y_train,X_dev,Y_dev,KBest)
 
 def regularization(X_train,Y_train,X_dev,Y_dev,c):
-    lv = LinearSVC(penalty="l2",C=0.1,dual=False)
+    lv = LinearSVC(penalty="l2",C=c,dual=False)
     lv.fit(X_train,Y_train)
     model = SelectFromModel(lv, prefit=True)
     X_tr_new = model.transform(X_train)
@@ -196,6 +196,12 @@ def feature_tuning_rf(X_train,Y_train,X_dev,Y_dev,X_test,Y_test):
     idx = np.argsort(score)[::-1][0]
     rand_model_new = rf_model[idx]
     tf_model_new = tf_model[idx]
+    #development accuracy
+    X_dev_new = tf_model_new.transform(X_dev)
+    score = prediction(rand_model_new,X_dev_new, Y_dev)
+    print("development acccuracy with L2 regularization: ", score)
+    Y_dev_pred = rand_model_new.predict(X_dev_new)
+    classification(Y_dev,Y_dev_pred)  
     X_test_new = tf_model_new.transform(X_test)
     score = prediction(rand_model_new,X_test_new,Y_test)
     print("testing acccuracy with L2 regularization: ", score)
